@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador de Propostas (Offline)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style id="inlineStyles">
+/* Paleta base (ajustável para igualar 100% ao app anterior) */
+:root{
+  --bg: #0b1020;
+  --card: #121a33;
+  --card2: #0f1730;
+  --text: #e7ecff;
+  --muted: #a9b3da;
+  --primary: #465EFF;  /* azul */
+  --accent: #FCFC30;   /* amarelo */
+  --line: rgba(255,255,255,.10);
+  --shadow: 0 12px 30px rgba(0,0,0,.35);
+  --radius: 18px;
+  --radius2: 12px;
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue";
+  background: radial-gradient(1100px 600px at 15% 0%, rgba(70,94,255,.20), transparent 60%),
+              radial-gradient(900px 500px at 85% 0%, rgba(252,252,48,.10), transparent 55%),
+              var(--bg);
+  color: var(--text);
+}
+
+.topbar{
+  position: sticky; top:0;
+  background: rgba(11,16,32,.72);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 18px;
+  z-index: 10;
+}
+
+.topbarInner{
+  max-width: 1080px;
+  margin: 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.tabs{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.tab{
+  border: 1px solid var(--line);
+  background: rgba(16,26,51,.65);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 999px;
+  cursor:pointer;
+  font-weight: 850;
+  letter-spacing:.2px;
+}
+.tab:hover{ border-color: rgba(255,255,255,.20); }
+.tab.active{
+  border-color: rgba(70,94,255,.55);
+  box-shadow: 0 10px 24px rgba(70,94,255,.18);
+}
+
+.hidden{ display:none !important; }
+
+.brand{ display:flex; gap:12px; align-items:center; }
+.logoImg{
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 20px rgba(70,94,255,.18);
+  padding: 4px;
+}
+.logoMark{
+  width: 34px; height: 34px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), rgba(70,94,255,.30));
+  box-shadow: 0 10px 20px rgba(70,94,255,.22);
+  position: relative;
+}
+.logoMark:after{
+  content:"";
+  position:absolute; inset: 8px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), rgba(252,252,48,.25));
+  opacity: .9;
+}
+
+.title{ font-weight: 800; letter-spacing: .2px; }
+.subtitle{ color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+.container{
+  max-width: 1080px;
+  margin: 22px auto;
+  padding: 0 16px 40px;
+  display:grid;
+  gap: 18px;
+}
+
+.card{
+  background: linear-gradient(180deg, rgba(18,26,51,.95), rgba(15,23,48,.92));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+/* Painel de Lances */
+.panelGrid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 980px){
+  .panelGrid{ grid-template-columns: 380px 1fr; }
+}
+
+.panelLeft, .panelRight{ min-width: 0; }
+
+.panelHeaderRow{ display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; flex-wrap:wrap; }
+
+.hr{ height:1px; background: var(--line); margin: 12px 0; }
+
+.kpis{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top: 8px; }
+.kpi{ padding:10px; border:1px solid var(--line); border-radius: 14px; background: rgba(15,23,48,.65); }
+.kpi b{ display:block; font-size:16px; margin-top: 4px; }
+
+.scenarios{ display:grid; gap: 10px; grid-template-columns: 1fr; }
+@media (min-width: 760px){ .scenarios{ grid-template-columns: repeat(3,1fr); } }
+
+.scenario{ border:1px solid var(--line); border-radius: 16px; padding: 12px; background: rgba(15,23,48,.65); }
+.scenario h3{ margin:0 0 4px; font-size: 14px; }
+.value{ font-size: 22px; font-weight: 950; margin: 8px 0; }
+.valueBRL{ font-size: 14px; font-weight: 850; margin: -2px 0 8px; color: rgba(231,236,255,.92); }
+
+.badge{ display:inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 950; }
+/* cores iguais ao painel original */
+:root{
+  --c-cons:#35d07f;
+  --c-mod:#ffcc66;
+  --c-aro:#ff6b6b;
+  --bar:#6aa5ff;
+  --barDim:rgba(106,165,255,.25);
+}
+.b1{ background:rgba(53,208,127,.15); color:var(--c-cons); border:1px solid rgba(53,208,127,.35); }
+.b2{ background:rgba(255,204,102,.15); color:var(--c-mod); border:1px solid rgba(255,204,102,.35); }
+.b3{ background:rgba(255,107,107,.15); color:var(--c-aro); border:1px solid rgba(255,107,107,.35); }
+
+canvas{ width:100%; height:340px; border:1px solid var(--line); border-radius: 14px; background: rgba(15,23,48,.65); }
+
+.cardHeader{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+h2{ margin:0 0 12px; font-size: 16px; }
+small, .hint{ color: var(--muted); }
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.grid.grid3{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 760px){
+  .grid{ grid-template-columns: 1fr; }
+}
+
+@media (max-width: 980px){
+  .grid.grid3{ grid-template-columns: 1fr; }
+}
+
+.field span{
+  display:flex;
+  align-items:center;
+  gap: 6px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.field em{ color: var(--accent); font-style: normal; }
+
+.row{ display:flex; gap: 10px; }
+
+input, select{
+  width: 100%;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--text);
+  border-radius: var(--radius2);
+  padding: 11px 12px;
+  outline: none;
+}
+select{ width: 120px; }
+input:focus, select:focus{ border-color: rgba(70,94,255,.55); box-shadow: 0 0 0 4px rgba(70,94,255,.15); }
+
+.actions{
+  display:flex; gap: 10px;
+  margin-top: 14px;
+}
+
+.btn{
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: var(--text);
+  background: rgba(255,255,255,.05);
+  cursor:pointer;
+  font-weight: 650;
+}
+
+/* Botões compactos (ex.: dentro da tabela) */
+.btn.mini{
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1;
+}
+.btn.primary{
+  border-color: rgba(70,94,255,.55);
+  background: linear-gradient(135deg, rgba(70,94,255,.95), rgba(70,94,255,.55));
+}
+.btn.primary:hover{ filter: brightness(1.05); }
+.btn.ghost:hover{ background: rgba(255,255,255,.08); }
+
+.note{
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(252,252,48,.35);
+  background: rgba(252,252,48,.06);
+  color: var(--muted);
+}
+
+.pill{
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(252,252,48,.35);
+  color: var(--accent);
+  background: rgba(252,252,48,.06);
+}
+
+.tableWrap{
+  overflow:auto;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,.14);
+}
+
+table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 880px;
+}
+
+thead th{
+  text-align:left;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--line);
+  padding: 12px;
+  position: sticky;
+  top: 0;
+}
+
+tbody td{
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: 13px;
+}
+
+tbody tr:hover td{
+  background: rgba(70,94,255,.06);
+}
+
+tbody tr.empty td{
+  color: var(--muted);
+  text-align:center;
+  padding: 18px 12px;
+}
+
+td .inlineInput{
+  width: 140px;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.foot{ margin-top: 10px; }
+
+
+.lanceCell{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 14px;
+}
+
+.pctMini{
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: .9;
+}
+
+.cellAssert{
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+
+.btn.secondary{background: var(--accent-2); color: white; border: none;}
+.btn.secondary:hover{filter: brightness(0.95);}
+
+.selectCol{width:42px; text-align:center;}
+#tabela thead th.selectCol{position:sticky; left:0; background:inherit;}
+
+.modal{position:fixed; inset:0; background: rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50;}
+.modal.hidden{display:none;}
+.modalCard{width:min(520px, 100%); background: var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.25); padding:16px;}
+.modalHeader{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;}
+.modalTitle{font-weight:800; font-size:16px;}
+.iconBtn{border:none; background:transparent; font-size:22px; line-height:1; cursor:pointer; color: var(--text);}
+.modalBody{display:grid; gap:10px;}
+.modalActions{display:flex; justify-content:flex-end; gap:10px; margin-top:12px;}
+.modalHint{margin-top:10px; font-size:12px;}
+.muted{color: var(--muted);}
+.lanceCell{position:relative;}
+.pctMini{position:absolute; top:-2px; left:0; font-size:11px; opacity:.85;}
+.lanceCell input.inlineInput{padding-top:16px;}
+
+
+/* Botões de assertividade com cores do cenário */
+#lpBtnCons{ border-color: var(--c-cons); color: var(--c-cons); background: rgba(53,208,127,.10); font-weight: 900; }
+#lpBtnMod{ border-color: var(--c-mod); color: var(--c-mod); background: rgba(255,204,102,.12); font-weight: 900; }
+#lpBtnAro{ border-color: var(--c-aro); color: var(--c-aro); background: rgba(255,107,107,.10); font-weight: 900; }
+#lpBtnCons:hover,#lpBtnMod:hover,#lpBtnAro:hover{ filter: brightness(1.05); }
+
+  </style>
+</head>
+<body>
+  <!-- Splash Screen (abertura) -->
+  <div id="splash-screen" aria-hidden="true">
+        <video id="splash-video" src="splash.webm" autoplay muted playsinline loop></video>
+  </div>
+
+  <header class="topbar">
+    <div class="topbarInner">
+      <div class="brand">
+        <img class="logoImg" src="LogoGerPro.png" alt="GerPro" />
+        <div class="brandText">
+          <div class="title">Gerador de Propostas</div>
+          <div class="subtitle">Modo offline • desenvolvido por João Ricardo</div>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="Navegação">
+        <button class="tab active" type="button" data-view="propostas">Propostas</button>
+        <button class="tab" type="button" data-view="estruturadas">Operações Estruturadas</button>
+        <button class="tab" type="button" data-view="painel">Painel de Lances</button>
+        <button class="tab" type="button" data-view="relatorio">Relatório e Consultas</button>
+        <button class="tab" type="button" data-view="settings">⚙️ Configurações</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="viewPropostas" class="container">
+    <section class="card">
+      <h2>Atualização de bases</h2>
+
+      <div class="grid grid3">
+        <label class="field">
+          <span>Atualizar lances (xlsx)</span>
+          <div class="row">
+            <input id="fileLances" type="file" accept=".xlsx" />
+            <button id="btnUploadLances" class="btn ghost" type="button">Atualizar</button>
+          </div>
+          <small class="hint">Formato: GRUPO | SEGMENTO | PRAZO | P1 | P2 | ... | P12 (uma linha por grupo).</small>
+        </label>
+
+        <label class="field">
+          <span>Atualizar grupos ativos (xlsx)</span>
+          <div class="row">
+            <input id="fileGrupos" type="file" accept=".xlsx" />
+            <button id="btnUploadGrupos" class="btn ghost" type="button">Atualizar</button>
+          </div>
+          <small class="hint">Formato: mesmas colunas da base atual (Grupo, Prazo, Valor do Crédito, Taxa %, Fundo %, Segmento...).</small>
+        </label>
+
+        <label class="field">
+          <span>Atualizar apelidos dos grupos (xlsx)</span>
+          <div class="row">
+            <input id="fileApelidos" type="file" accept=".xlsx" />
+            <button id="btnUploadApelidos" class="btn ghost" type="button">Atualizar</button>
+          </div>
+          <small class="hint">Formato: colunas “Código do grupo” e “Grupo” (apelido).</small>
+        
+        <label class="field">
+          <span>Consultar código do grupo (pelo apelido)</span>
+          <div class="row">
+            <input id="apelidoLookup" type="text" placeholder="Ex.: AUTO-20" />
+            <button id="btnApelidoToCodigo" class="btn ghost" type="button">Buscar</button>
+          </div>
+          <small class="hint">Retorna o código no formato XXXX (usando a base de apelidos carregada).</small>
+          <div class="pill" id="apelidoCodigoOut" style="margin-top:8px;">Código: —</div>
+        </label>
+
+</label>
+      </div>
+
+      <div class="actions">
+        <button id="btnClearLocal" class="btn secondary" type="button">Restaurar bases originais</button>
+        <button id="btnQualidadeBase" class="btn ghost" type="button">Qualidade da base</button>
+        <div class="pill" id="statusUpdates">Sem atualizações locais</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Parâmetros</h2>
+
+      <div class="grid">
+        <label class="field">
+          <span>Valor do crédito (R$) <em>*</em></span>
+          <input id="credito" type="number" inputmode="decimal" min="0" placeholder="Ex.: 120000" required />
+        </label>
+
+        <label class="field">
+          <span>Grupo específico (opcional)</span>
+          <input id="grupoEspecifico" type="text" inputmode="numeric" placeholder="Ex.: 1234" />
+          <small class="hint">Quando preenchido, ao clicar em <strong>Buscar opções</strong> o app adiciona este grupo aos resultados (até <strong>5</strong> itens). Só remove ao clicar em <strong>Limpar</strong>.</small>
+        </label>
+
+        <label class="field">
+          <span>Lance (opcional)</span>
+          <div class="row">
+            <select id="lanceTipo" aria-label="Tipo de lance">
+              <option value="reais">R$</option>
+              <option value="percentual">%</option>
+            </select>
+            <input id="lance" type="number" inputmode="decimal" min="0" placeholder="Ex.: 27000 ou 20" />
+          </div>
+          <small class="hint">Se preenchido, filtra opções cujo <strong>Lance Sugerido</strong> calculado fique até <strong>20% acima</strong> do informado (sem limite para baixo).</small>
+        </label>
+
+        <label class="field">
+          <span>Prazo desejado (opcional)</span>
+          <input id="prazo" type="number" inputmode="numeric" min="1" placeholder="Ex.: 60" />
+        </label>
+
+        <label class="field">
+          <span>Parcela desejada (opcional)</span>
+          <input id="parcela" type="number" inputmode="decimal" min="0" placeholder="Ex.: 1800" />
+          <small class="hint">Quando preenchida, o filtro considera a <strong>parcela pós-lance</strong> (até <strong>20% acima</strong> do desejado; sem limite para baixo).</small>
+        
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="btnBuscar" class="btn primary">Buscar opções</button>
+        <button id="btnLimpar" class="btn ghost" type="button">Limpar</button>
+        <button id="btnExport" class="btn secondary" type="button">Exportar PDF</button>
+      </div>
+
+      <div class="note">
+        Margem aplicada no crédito: <strong>até 20% acima</strong> e <strong>5% abaixo</strong> do valor informado. •
+        Entre <strong>5</strong> e <strong>20</strong> opções.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardHeader">
+        <h2>Resultados</h2>
+        <div class="pill" id="statusBase">Base carregada</div>
+      </div>
+
+      <div class="tableWrap">
+        <table id="tabela">
+          <thead>
+            <tr>
+              <th class="selectCol"><input id="selectAll" type="checkbox" title="Selecionar todos" /></th>
+              <th>Grupo</th>
+              <th>Painel</th>
+              <th>Valor do Crédito</th>
+              <th>Editar Crédito</th>
+              <th>Prazo Inicial</th>
+              <th>Parcela Inicial</th>
+              <th>Lance Sugerido</th>
+              <th>Parcela Pós Lance</th>
+              <th>Prazo Pós Lance</th>
+              <th>Taxa Adm Total</th>
+              <th>Fundo Res Total</th>
+<th>Assertividade</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr class="empty">
+              <td colspan="13">Preencha o valor do crédito e clique em “Buscar opções”.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="limitInfoPropostas" class="muted limitInfo"></div>
+
+      <div class="foot">
+        <small>Obs.: Prazo Pós Lance = Prazo Inicial − 1. O Lance Sugerido (R$) define a Parcela Pós Lance.</small>
+      </div>
+    </section>
+  </main>
+
+    <!-- Operações Estruturadas -->
+  <main id="viewEstruturadas" class="container hidden">
+    <section class="card">
+      <h2>Parâmetros</h2>
+
+      <div class="grid">
+        <label class="field">
+          <span>Valor do crédito total (R$) <em>*</em></span>
+          <input id="oeCredito" type="number" inputmode="decimal" min="0" placeholder="Ex.: 700000" required />
+          <small class="hint">O app vai somar os créditos dos grupos selecionados para atingir este valor.</small>
+        </label>
+
+        <label class="field">
+          <span>Quantidade de grupos no resultado <em>*</em></span>
+          <input id="oeQtd" type="number" inputmode="numeric" min="2" max="10" value="3" />
+          <small class="hint">Escolha quantos grupos compõem a operação (máximo 10). O app não repete grupos e busca prazos diferentes.</small>
+        </label>
+
+        <label class="field">
+          <span>Exibir resultado</span>
+          <div class="checkRow">
+            <label class="check"><input id="oeModeCombo" type="checkbox" checked /> ComboAuto</label>
+            <label class="check"><input id="oeModeCustom" type="checkbox" /> Custom</label>
+          </div>
+          <small class="hint">Escolha qual planilha de resultados será exibida. Apenas a opção marcada ficará ativa.</small>
+        </label>
+
+        <label class="field">
+          <span>Lance (opcional)</span>
+          <div class="row">
+            <select id="oeLanceTipo" aria-label="Tipo de lance">
+              <option value="reais">R$</option>
+              <option value="percentual">%</option>
+            </select>
+            <input id="oeLance" type="number" inputmode="decimal" min="0" placeholder="Ex.: 47000 ou 18" />
+          </div>
+          <small class="hint">Filtra opções cujo <strong>Lance Sugerido</strong> calculado fique até <strong>20% acima</strong> do informado (sem limite para baixo).</small>
+        </label>
+
+        <label class="field">
+          <span>Faixa de prazo (opcional)</span>
+          <div class="row">
+            <input id="oePrazoMin" type="number" inputmode="numeric" min="1" placeholder="Prazo mínimo" />
+            <input id="oePrazoMax" type="number" inputmode="numeric" min="1" placeholder="Prazo máximo" />
+          </div>
+          <small class="hint">Quando informado, o app distribui os prazos entre o mínimo e o máximo, proporcionalmente à quantidade de grupos.</small>
+        
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="oeBuscar" class="btn primary" type="button">Buscar operações</button>
+        <button id="oeLimpar" class="btn ghost" type="button">Limpar</button>
+        <button id="oeExport" class="btn secondary" type="button">Exportar PDF</button>
+      </div>
+
+      <div class="note">
+        Objetivo: menor <strong>lance médio</strong> e maior <strong>prazo médio</strong>, com <strong>parcelas decrescentes</strong> e prazos diferentes.
+      </div>
+    </section>
+
+    <section class="card">
+      <div id="oeComboBlock">
+      <div class="cardHeader">
+        <h2>Resultados – ComboAuto</h2>
+        <div class="pill" id="oeStatus">Pronto</div>
+      </div>
+
+      <div class="tableWrap">
+        <table id="oeTabela">
+          <thead>
+            <tr>
+              <th class="selectCol"><input id="oeSelectAll" type="checkbox" title="Selecionar todos" /></th>
+              <th>Grupo</th>
+              <th style="width:80px">Painel</th>
+              <th>Valor do Crédito</th>
+              <th>Editar Crédito</th>
+              <th>Prazo Inicial</th>
+              <th>Parcela Inicial</th>
+              <th>Lance Sugerido</th>
+              <th>Parcela Pós Lance</th>
+              <th>Prazo Pós Lance</th>
+              <th>Taxa Adm Total</th>
+              <th>Fundo Res Total</th>
+</tr>
+          </thead>
+          <tbody id="oeTbody">
+            <tr class="empty">
+              <td colspan="13">Preencha o valor do crédito total e clique em “Buscar operações”.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="limitInfoOE" class="muted limitInfo"></div>
+
+      <div class="foot">
+        <small id="oeResumo">—</small>
+        <br>
+        <small id="oeResumo2">—</small>
+      </div>
+
+      <div class="hr"></div>
+
+      <div>
+        <h2 style="margin-bottom:6px;">Parcelas pós lance (decrescentes)</h2>
+        <div id="oeParcelasDemo" class="note">—</div>
+      </div>
+
+      </div>
+
+      <div class="hr"></div>
+
+      <div id="oeCustomBlock" class="hidden">
+      <!-- Resultados Customizada -->
+      <div class="cardHeader" style="margin-top:4px;">
+        <h2>Resultados – Customizada</h2>
+        <div class="pill" id="oeCStatus">Pronto</div>
+      </div>
+
+      <div class="tableWrap">
+        <table id="oeCTabela">
+          <thead>
+            <tr>
+              <th class="selectCol"><input id="oeCSelectAll" type="checkbox" title="Selecionar todos" /></th>
+              <th>Grupo</th>
+              <th style="width:80px">Painel</th>
+              <th>Crédito</th><th>Editar crédito</th>
+              <th style="width:170px">Ajuste do crédito</th>
+              <th>Prazo Inicial</th>
+              <th>Parcela Inicial</th>
+              <th>Lance Sugerido</th>
+              <th>Parcela Pós Lance</th>
+              <th>Prazo Pós Lance</th>
+              <th>Taxa Adm Total</th>
+              <th>Fundo Res Total</th>
+</tr>
+          </thead>
+          <tbody id="oeCTbody">
+            <tr class="empty">
+              <td colspan="13">Faça uma busca para ver opções customizáveis.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="limitInfoOEC" class="muted limitInfo"></div>
+
+      <div class="actions" style="justify-content:flex-end; margin-top:12px;">
+        <button id="oeCExport" class="btn secondary" type="button">Exportar PDF (Customizada)</button>
+      </div>
+
+      <div class="foot">
+        <small id="oeCResumo">—</small>
+        <br>
+        <small id="oeCResumo2">—</small>
+      </div>
+
+      <div class="hr"></div>
+
+      <div>
+        <h2 style="margin-bottom:6px;">Parcelas pós lance (decrescentes) – Customizada</h2>
+        <div id="oeCParcelasDemo" class="note">—</div>
+      </div>
+
+      </div> <!-- /oeCustomBlock -->
+    </section>
+  </main>
+
+  <!-- Relatório e Consultas -->
+  <main id="viewRelatorio" class="container hidden">
+    <section class="card">
+      <div class="cardHeader">
+        <h2>Relatório e Consultas</h2>
+        <div class="pill" id="rcStatus">Pronto</div>
+      </div>
+
+      <div class="grid grid3">
+        <label class="field">
+          <span>Data inicial</span>
+          <input id="rcDateFrom" type="date" />
+        </label>
+        <label class="field">
+          <span>Data final</span>
+          <input id="rcDateTo" type="date" />
+        </label>
+        <label class="field">
+          <span>Radical da proposta</span>
+          <input id="rcRadical" type="text" inputmode="numeric" placeholder="Ex.: 0100" />
+          <small class="hint">Radical = número sequencial sem a data (ex.: 0100).</small>
+        
+        </label>
+      </div>
+
+      <div class="grid">
+        <label class="field">
+          <span>Detalhamento do resultado</span>
+          <select id="rcDetailLevel">
+            <option value="resumo" selected>Resumo</option>
+            <option value="detalhado">Detalhado (itens da proposta)</option>
+          </select>
+        </label>
+
+        <div class="field">
+          <span>Ações</span>
+          <div class="actions" style="margin-top:0;">
+            <button id="rcBuscar" class="btn primary" type="button">Consultar</button>
+            <button id="rcLimpar" class="btn ghost" type="button">Limpar</button>
+            <button id="rcExportCsv" class="btn secondary" type="button">Exportar CSV</button>
+            <button id="rcRelatorioBase" class="btn secondary" type="button">Relatório Base (PDF)</button>
+          </div>
+          <small class="hint">Dica: clique em “Gerar PDF” para reimprimir uma proposta já registrada.</small>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="tableWrap">
+        <table id="rcTabela">
+          <thead>
+            <tr>
+              <th>Nº Proposta</th>
+              <th>Data</th>
+              <th>Valor do crédito</th>
+              <th>Tipo</th>
+              <th style="width:220px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="rcTbody">
+            <tr class="empty"><td colspan="5">Nenhum registro ainda. Gere um PDF em Propostas ou Operações Estruturadas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hr"></div>
+
+      <div id="rcDetail" class="note">Selecione “Detalhado” e clique em “Ver” para visualizar os itens.</div>
+      <div id="rcDetailTable" class="tableWrap hidden" style="margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Grupo</th>
+              <th>Crédito</th>
+              <th>Prazo</th>
+              <th>Parcela</th>
+              <th>Lance</th>
+              <th>Pós-lance</th>
+            </tr>
+          </thead>
+          <tbody id="rcDetailTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+<!-- Painel Lance Sugerido (integrado) -->
+  <main id="viewPainel" class="container hidden">
+    <section class="card">
+      <div class="cardHeader">
+        <h2>Painel Lance Sugerido</h2>
+        <div class="pill">📌 Funciona 100% offline</div>
+      </div>
+
+      <div class="panelGrid">
+        <div class="panelLeft">
+          <label class="field">
+            <span>1) Código do grupo</span>
+            <div class="row">
+              <input id="lpGroup" type="text" placeholder="Ex: 916" />
+              <button id="lpBuscar" class="btn primary" type="button">Buscar</button>
+            </div>
+          </label>
+
+          <div class="hr"></div>
+
+          <div class="grid grid3">
+            <label class="field">
+              <span>Excelente (+ p.p.)</span>
+              <input id="lpMCons" type="number" step="0.1" value="9" />
+            </label>
+            <label class="field">
+              <span>Ótimo (+ p.p.)</span>
+              <input id="lpMMod" type="number" step="0.1" value="5" />
+            </label>
+            <label class="field">
+              <span>Bom (+ p.p.)</span>
+              <input id="lpMAro" type="number" step="0.1" value="2" />
+            </label>
+          </div>
+
+          <div class="hr"></div>
+
+          <label class="field">
+            <span>3) Valor do consórcio (R$)</span>
+            <input id="lpValorConsorcio" type="text" inputmode="decimal" placeholder="Ex: 180000" />
+            <small class="hint">Usado apenas para converter os percentuais em valores (R$) nos 3 cenários.</small>
+          </label>
+
+          <div class="hr"></div>
+
+          <div class="kpis">
+            <div class="kpi"><span class="muted">Prazo atual</span><b id="lpKpiPrazo">—</b></div>
+            <div class="kpi"><span class="muted">Segmento</span><b id="lpKpiSegmento">—</b></div>
+            <div class="kpi"><span class="muted">Base</span><b id="lpKpiBase">—</b></div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="hint" id="lpStatus">Use um código de grupo para consultar.</div>
+        </div>
+
+        <div class="panelRight">
+          <div class="panelHeaderRow">
+            <div>
+              <div class="muted" style="font-size:12px;">Últimos 12 lances mínimos</div>
+              <div id="lpChartTitle" style="font-weight:900; font-size:16px;">—</div>
+            </div>
+            <div class="pill" id="lpBaseInfo">Base: —</div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <canvas id="lpChart" width="1100" height="340"></canvas>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="scenarios">
+            <div class="scenario">
+              <h3>Excelente</h3>
+              <div class="value" id="lpVCons">—</div>
+              <div class="valueBRL" id="lpVConsBRL">—</div>
+              <button id="lpBtnCons" class="btn ghost" type="button">Assertividade</button>
+              <div class="applyRow">
+                <button id="lpApplyCons" class="btn mini primary" type="button">Aplicar na proposta</button>
+                <button id="lpApplyConsOEC" class="btn mini secondary" type="button" style="display:none;">Aplicar em OECustom</button>
+              </div>
+              <div class="hint" id="lpACons">—</div>
+            </div>
+            <div class="scenario">
+              <h3>Ótimo</h3>
+              <div class="value" id="lpVMod">—</div>
+              <div class="valueBRL" id="lpVModBRL">—</div>
+              <button id="lpBtnMod" class="btn ghost" type="button">Assertividade</button>
+              <div class="applyRow">
+                <button id="lpApplyMod" class="btn mini primary" type="button">Aplicar na proposta</button>
+                <button id="lpApplyModOEC" class="btn mini secondary" type="button" style="display:none;">Aplicar em OECustom</button>
+              </div>
+              <div class="hint" id="lpAMod">—</div>
+            </div>
+            <div class="scenario">
+              <h3>Bom</h3>
+              <div class="value" id="lpVAro">—</div>
+              <div class="valueBRL" id="lpVAroBRL">—</div>
+              <button id="lpBtnAro" class="btn ghost" type="button">Assertividade</button>
+              <div class="applyRow">
+                <button id="lpApplyAro" class="btn mini primary" type="button">Aplicar na proposta</button>
+                <button id="lpApplyAroOEC" class="btn mini secondary" type="button" style="display:none;">Aplicar em OECustom</button>
+              </div>
+              <div class="hint" id="lpAAro">—</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="hint"><b>Base usada:</b> <span class="muted">base_ponderada + DP(12)</span>. <span class="muted">Ao clicar em Assertividade, as barras “suficientes” são coloridas com a cor do cenário.</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Logos usados na exportação PDF -->
+  <img id="logoLeft" src="logoguerra.png" alt="Logo Guerra Consórcios" style="display:none" />
+  <img id="logoRight" src="Logo BB Consórcios_Meios Digitais (1).png" alt="Logo BB Consórcios" style="display:none" />
+  <img id="logoAfter" src="2.jpg" alt="Selo/Marca complementar" style="display:none" />
+  <img id="bgMark" src="watermark.png" alt="Marca d\u2019\u00e1gua" style="display:none" />
+
+
+  <!-- Modal exportação -->
+  
+  <main id="viewSettings" class="container hidden">
+    <section class="card">
+      <h2>Configurações</h2>
+      <p class="muted">Essas configurações ficam salvas no seu navegador (offline). Elas não mudam as regras comerciais, apenas o formato, limites de tela e margens do PDF.</p>
+
+      <div class="grid grid2">
+        <label class="field">
+          <span>Margens padrão do PDF (mm)</span>
+          <input id="cfgPdfMargins" type="number" min="5" max="25" step="1" />
+          <small class="hint">Usado para ajustar o layout do PDF. Não muda os cálculos.</small>
+        </label>
+
+        <label class="field">
+          <span>Margem de segurança (pontos percentuais)</span>
+          <input id="cfgMargemSeguranca" type="number" min="0" max="30" step="0.01" />
+          <small class="hint">Usada no Lance Sugerido: média ponderada + DP + margem. Padrão: 2,50%.</small>
+        </label>
+
+        <label class="field">
+          <span>Máximo de linhas exibidas na tela</span>
+          <input id="cfgMaxLinhas" type="number" min="5" max="200" step="1" />
+          <small class="hint">Ajuda a manter a tela rápida em bases grandes.</small>
+        </label>
+
+        <label class="field">
+          <span>Formato padrão do lance</span>
+          <select id="cfgFormatoLance">
+            <option value="pct">%</option>
+            <option value="brl">R$</option>
+          </select>
+          <small class="hint">Apenas preferência visual de entrada/saída. Não altera cálculos.</small>
+        
+        </label>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="checkRow">
+        <label class="check"><input id="cfgTabelaSimplificada" type="checkbox" /> Modo de visualização simplificada (na tela)
+        </label>
+      </div>
+      <div class="checkRow">
+        <label class="check"><input id="cfgMostrarExplicacoes" type="checkbox" /> Mostrar explicações resumidas dos cálculos
+        </label>
+      </div>
+      <div class="checkRow">
+        <label class="check"><input id="cfgModoDiagnostico" type="checkbox" /> Modo diagnóstico
+        </label>
+      </div>
+
+      <div class="row" style="justify-content:flex-end; gap:10px; margin-top:14px;">
+        <button id="btnSalvarSettings" class="btn primary" type="button">Salvar configurações</button>
+      </div>
+    </section>
+  </main>
+
+
+<div id="exportModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <div class="modalHeader">
+        <div class="modalTitle">Exportar proposta em PDF</div>
+        <button id="btnCloseModal" class="iconBtn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modalBody">
+        <p id="exportSummary" class="muted">Selecione ao menos uma opção para exportar.</p>
+        <label class="field">
+          <span>Data da assembléia</span>
+          <input id="dataAssembleia" type="date" />
+        </label>
+
+        <label class="field" style="margin-top:10px">
+          <span>Colunas no PDF</span>
+          <label style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background: rgba(15,23,48,.55); cursor:pointer; user-select:none;">
+            <input id="pdfIncludeTaxas" type="checkbox" checked />
+            <span style="font-size:13px; color:var(--text)">Incluir <b>Taxa de Adm Total</b> e <b>Fundo de Reserva Total</b></span>
+          </label>
+          <small class="hint">Dica: ao desmarcar, o PDF fica mais compacto e o layout se ajusta automaticamente.</small>
+        
+        </label>
+      </div>
+      <div class="modalActions">
+        <button id="btnCancelExport" class="btn ghost" type="button">Cancelar</button>
+        <button id="btnConfirmExport" class="btn primary" type="button">Gerar PDF</button>
+      </div>
+      <div class="modalHint muted">Dica: ao abrir a janela de impressão, selecione “Salvar como PDF”.</div>
+    </div>
+  e navegador (offline).</div>
+    </div>
+  </div>
+
+  <!-- Modal Qualidade da base -->
+  <div id="qualityModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard" style="width:min(860px, 100%)">
+      <div class="modalHeader">
+        <div class="modalTitle">Relatório de qualidade da base</div>
+        <button id="btnCloseQuality" class="iconBtn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modalBody">
+        <div id="qualityBody" class="muted">Carregando…</div>
+      </div>
+      <div class="modalActions">
+        <button id="btnRestaurarBaseOriginal" class="btn secondary" type="button">Restaurar Base Original</button>
+        <button id="btnCloseQuality2" class="btn ghost" type="button">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="diagBar" class="diagBar hidden">Modo diagnóstico: veja detalhes de filtros/descartes no console e no relatório de qualidade.</div>
+
+  <script src="data.js"></script>
+  <script src="data_lances.js"></script>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+  <script src="painel_lances.js"></script>
+</body>
+</html>
