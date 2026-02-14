@@ -6,7 +6,7 @@
 */
 (function(){
   const CORE = {};
-
+// adicionando comentário teste
   // ---------------- utilitários ----------------
   CORE.round2 = function(n){
     const x = Number(n);
